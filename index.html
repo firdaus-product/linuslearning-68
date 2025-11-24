@@ -3,173 +3,145 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kemahiran Pemulihan: Masa dan Waktu (Intermediate)</title>
+  <title>Kemahiran Pemulihan: Masa & Waktu (Intermediate)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { box-sizing: border-box; }
-    .activity-card { min-height: 480px; } 
-    .number-card { transition: all .3s ease; cursor: pointer; }
-    .number-card:hover { transform: scale(1.05); }
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    /* Gaya untuk Jam Analog (SVG) */
-    .clock-face { stroke: #333; stroke-width: 3; fill: white; }
+  <style>
+    /* --- UI STYLE (TEMA HIJAU KONSISTEN) --- */
+    body { 
+        font-family: 'Fredoka', sans-serif; 
+        background-color: #f0fdf4; 
+        background-image: radial-gradient(#86efac 2px, transparent 2px); 
+        background-size: 30px 30px; 
+    }
     
-    /* =================================
-      PEMBETULAN CSS DI SINI
-      =================================
-      - Menggantikan #hand-hour dan #hand-minute
-      - dengan class .clock-hand-hour dan .clock-hand-minute
-    */
+    /* Card Container */
+    .game-card { 
+        background: white; 
+        border: 4px solid #475569; 
+        box-shadow: 8px 8px 0px #00000020; 
+        border-radius: 1.5rem; 
+        transition: transform 0.2s; 
+        min-height: 550px; 
+    }
+    
+    /* Buttons 3D */
+    .btn-3d { transition: all 0.1s; border-bottom-width: 6px; border-color: rgba(0,0,0,0.2); transform: translateY(0); cursor: pointer; display: inline-block; }
+    .btn-3d:active:not(:disabled) { transform: translateY(4px); border-bottom-width: 2px; box-shadow: none; }
+    .btn-3d:disabled { opacity: 0.6; cursor: not-allowed; border-bottom-width: 6px; filter: grayscale(100%); }
+
+    /* Animation */
+    .shake { animation: shake 0.4s ease-in-out; border-color: #ef4444 !important; background-color: #fee2e2 !important; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px) rotate(-5deg); } 75% { transform: translateX(8px) rotate(5deg); } }
+    
+    .drag-item { cursor: grab; user-select: none; transition: transform 0.1s; }
+    .drag-item:active { cursor: grabbing; transform: scale(0.95); }
+
+    /* --- STYLES KHUSUS JAM (SVG) --- */
+    .clock-container { max-width: 220px; margin: 0 auto; touch-action: none; }
+    .clock-face { stroke: #334155; stroke-width: 8; fill: #f8fafc; }
+    .clock-center { fill: #334155; }
+    
     .clock-hand {
       stroke-linecap: round;
-      transform-origin: 50% 50%;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: 50% 50%; /* PENTING: Putar dari tengah */
+      transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .clock-hand-hour {
-      stroke: #3b82f6; /* Biru */
-      stroke-width: 7;
-    }
-    .clock-hand-minute {
-      stroke: #16a34a; /* Hijau */
-      stroke-width: 5;
-    }
-    /* ===============================
-       AKHIR PEMBETULAN CSS
-       =============================== */
+    .clock-hand-hour { stroke: #3b82f6; stroke-width: 8; } /* Biru */
+    .clock-hand-minute { stroke: #16a34a; stroke-width: 6; } /* Hijau */
+    .clock-hand-second { stroke: #ef4444; stroke-width: 3; } /* Merah (jika perlu) */
 
-    .clock-center { fill: #333; }
-    .clock-container {
-      max-width: 250px;
-      margin: 1rem auto;
-      touch-action: none;
-    }
-    
-    /* Animasi */
-    @keyframes shake {
-      0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
-      50% { transform: translateX(5px); } 75% { transform: translateX(-5px); }
-      100% { transform: translateX(0); }
-    }
-    .shake { animation: shake 0.5s ease; }
-    .pulse { animation: pulse 1.5s ease-in-out infinite; }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.03); opacity: .95; }
-    }
-    
-    .jadual-item { border-left: 5px solid #6d28d9; }
-    .pilihan-btn:disabled { opacity: 0.3; background-color: #9ca3af; cursor: not-allowed; }
-    .hold-btn:active { transform: scale(0.95); background-color: #15803d; }
+    /* Jadual Harian Styles */
+    .jadual-item { border-left: 6px solid #8b5cf6; background-color: #f3f4f6; padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+
   </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-full">
+<body class="min-h-screen text-slate-800 pb-10">
 
-  <div class="bg-yellow-100 border-b-4 border-yellow-300 p-4 shadow-sm sticky top-0 z-10">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
+  <div class="fixed top-4 left-0 right-0 z-50 px-4 pointer-events-none">
+    <div class="max-w-4xl mx-auto bg-green-400 border-4 border-green-600 rounded-full px-6 py-3 shadow-xl flex items-center justify-between pointer-events-auto transform hover:scale-[1.01] transition-transform">
       <div class="flex items-center gap-3">
-        <span class="text-2xl">💡</span>
-        <span id="info-text" class="text-lg font-semibold text-gray-800">
-          Pilih aktiviti 'intermediate' untuk menguji kemahiran masa!
-        </span>
+        <span class="text-3xl animate-bounce">⏰</span>
+        <span id="info-text" class="text-xl font-bold text-green-900 leading-none mt-1">Masa & Waktu (Sederhana)</span>
       </div>
-      <button id="speak-btn"
-              class="bg-yellow-300 hover:bg-yellow-400 text-yellow-800 font-bold py-2 px-4 rounded-full text-xl transition-colors duration-200"
-              onclick="speakInfo()">
-        🔊
-      </button>
+      <button id="speak-btn" onclick="speakInfo()" class="bg-white hover:bg-green-50 text-green-600 border-2 border-green-200 rounded-full p-2 transition-colors shadow-sm">🔊</button>
     </div>
   </div>
+  <div class="h-24"></div>
 
-  <div class="max-w-6xl mx-auto p-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 activity-card flex items-center justify-center">
-      <div id="activity-content" class="text-center w-full">
-        <div class="py-16">
-          <div class="text-6xl mb-4">⏰</div>
-          <h2 class="text-3xl font-bold text-gray-800 mb-4">
-            Kemahiran Pemulihan: Masa dan Waktu (Intermediate)
-          </h2>
-          <p class="text-xl text-gray-600 mb-8">
-            Aplikasikan kemahiran tambah dan tolak masa anda.
-          </p>
-          <div class="text-4xl">👇</div>
+  <div class="max-w-6xl mx-auto p-4">
+    
+    <div class="game-card p-8 mb-8 flex items-center justify-center relative">
+        <div id="activity-content" class="w-full relative z-10">
+            <div class="py-10 text-center">
+                <div class="text-8xl mb-6 animate-pulse">⏳</div>
+                <h2 class="text-5xl font-bold text-emerald-600 mb-4">Masa & Waktu</h2>
+                <p class="text-2xl text-slate-500 mb-8 font-semibold">Kira Tempoh, Jadual & Lumba Minit</p>
+                <div class="text-4xl animate-bounce">👇</div>
+            </div>
         </div>
-      </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg p-6">
-      <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Pilih Aktiviti</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-        <button onclick="loadActivity(1)"
-                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
-          1. Mesin Masa
-        </button>
-        <button onclick="loadActivity(2)"
-                class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
-          2. Kira Tempoh
-        </button>
-        <button onclick="loadActivity(3)"
-                class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
-          3. Jadual Harian
-        </button>
-        <button onclick="loadActivity(4)"
-                class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
-          4. Baki Masa Rehat
-        </button>
-        <button onclick="loadActivity(5)"
-                class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
-          5. Lumba Minit
-        </button>
+    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg p-6 border-2 border-white">
+      <h3 class="text-2xl font-bold text-slate-700 mb-4 text-center">🎮 Pilih Aktiviti</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <button onclick="loadActivity(1)" class="btn-3d bg-blue-500 text-white font-bold py-4 px-2 rounded-xl text-lg">🕰️ Mesin Masa</button>
+        <button onclick="loadActivity(2)" class="btn-3d bg-emerald-500 text-white font-bold py-4 px-2 rounded-xl text-lg">⏱️ Kira Tempoh</button>
+        <button onclick="loadActivity(3)" class="btn-3d bg-violet-500 text-white font-bold py-4 px-2 rounded-xl text-lg">📝 Jadual Saya</button>
+        <button onclick="loadActivity(4)" class="btn-3d bg-red-500 text-white font-bold py-4 px-2 rounded-xl text-lg">⏳ Baki Masa</button>
+        <button onclick="loadActivity(5)" class="btn-3d bg-orange-500 text-white font-bold py-4 px-2 rounded-xl text-lg">🏁 Lumba Minit</button>
       </div>
 
-      <div class="flex justify-center gap-4">
-        <button onclick="clearActivity()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-colors duration-200">
-          🧹 Bersih
-        </button>
-        <button onclick="nextActivity()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-colors duration-200">
-          ➡️ Seterusnya
-        </button>
+      <div class="flex justify-center gap-4 border-t-2 border-slate-100 pt-6">
+        <button onclick="clearActivity()" class="btn-3d bg-slate-400 text-white font-bold py-2 px-6 rounded-full text-lg">🏠 Menu</button>
+        <button onclick="nextActivity()" class="btn-3d bg-indigo-500 text-white font-bold py-2 px-8 rounded-full text-xl">Seterusnya ➡️</button>
       </div>
     </div>
   </div>
 
   <script>
+    /* --- STANDARD HELPERS --- */
     let currentActivity = 0;
     let ttsEnabled = false;
-    let currentInfo = "Pilih aktiviti 'intermediate' untuk menguji kemahiran masa!";
+    let currentInfo = "Pilih aktiviti untuk mula.";
     
+    // State Variables
     let clockState = { hour: 3, minute: 0, isDragging: null };
     let activityTimer = null;
-    let activityState = {}; 
+    let activityState = {};
 
-    /* ====== TTS ====== */
-    function speak(text) {
-      if (!ttsEnabled) return;
-      if (!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      setTimeout(() => {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'ms-MY'; u.rate = 0.9; u.pitch = 1.05;
-        const voices = window.speechSynthesis.getVoices();
-        const ms = voices.find(v => v.lang === 'ms-MY' || v.lang?.startsWith('ms'));
-        if (ms) u.voice = ms;
-        window.speechSynthesis.speak(u);
-      }, 100);
-    }
-    function setInfo(text) { currentInfo = text; document.getElementById('info-text').textContent = text; }
-    function speakInfo() {
-      if (!ttsEnabled) {
-        ttsEnabled = true;
-        const btn = document.getElementById('speak-btn');
-        btn.classList.add('bg-green-300', 'hover:bg-green-400');
-        btn.classList.remove('bg-yellow-300', 'hover:bg-yellow-400');
-      }
-      speak(currentInfo);
+    function triggerWin() { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); }
+    
+    function speak(text) { 
+        if (!ttsEnabled || !('speechSynthesis' in window)) return; 
+        window.speechSynthesis.cancel(); 
+        const u = new SpeechSynthesisUtterance(text); 
+        u.lang = 'ms-MY'; u.rate = 0.9; u.pitch = 1.1; 
+        const voices = window.speechSynthesis.getVoices(); 
+        const ms = voices.find(v => v.lang === 'ms-MY' || v.lang?.startsWith('ms')); 
+        if (ms) u.voice = ms; 
+        window.speechSynthesis.speak(u); 
     }
     
-    // =================================================================
-    // FUNGSI TERAS JAM (Termasuk fungsi seret)
-    // =================================================================
+    function setInfo(text) { 
+        currentInfo = text; 
+        const infoEl = document.getElementById('info-text'); 
+        infoEl.style.opacity = 0; 
+        setTimeout(() => { infoEl.textContent = text; infoEl.style.opacity = 1; }, 200); 
+    }
+    
+    function speakInfo() { 
+        if (!ttsEnabled) { 
+            ttsEnabled = true; 
+            document.getElementById('speak-btn').classList.add('bg-green-100', 'text-green-600'); 
+        } 
+        speak(currentInfo); 
+    }
 
+    /* --- JAM ANALOG GENERATOR & LOGIC --- */
     function createClockSVG(container, initialHour, initialMinute, isStatic = false) {
       const clockId = `clock-${Math.random().toString(36).substr(2, 9)}`;
       container.innerHTML = `
@@ -178,19 +150,19 @@
           ${Array.from({length: 12}).map((_, i) => {
             const angle = (i + 1) * 30 * Math.PI / 180;
             const x = 100 + Math.sin(angle) * 78; const y = 100 - Math.cos(angle) * 78;
-            return `<text x="${x}" y="${y+5}" text-anchor="middle" font-size="14" font-weight="bold" fill="#444">${i + 1}</text>`;
+            return `<text x="${x}" y="${y+5}" text-anchor="middle" font-size="16" font-weight="bold" fill="#334155" style="font-family: 'Fredoka'">${i + 1}</text>`;
           }).join('')}
           ${Array.from({length: 60}).map((_, i) => {
             const angle = i * 6 * Math.PI / 180;
             const x1 = 100 + Math.sin(angle) * (i % 5 === 0 ? 85 : 90);
             const y1 = 100 - Math.cos(angle) * (i % 5 === 0 ? 85 : 90);
             const x2 = 100 + Math.sin(angle) * 92; const y2 = 100 - Math.cos(angle) * 92;
-            return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${i % 5 === 0 ? '#333' : '#999'}; stroke-width: ${i % 5 === 0 ? 2 : 1};" />`;
+            return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${i % 5 === 0 ? '#334155' : '#cbd5e1'}; stroke-width: ${i % 5 === 0 ? 3 : 1};" />`;
           }).join('')}
           
-          <line id="hand-hour-${clockId}" x1="100" y1="100" x2="100" y2="60" class="clock-hand clock-hand-hour"/>
-          <line id="hand-minute-${clockId}" x1="100" y1="100" x2="100" y2="35" class="clock-hand clock-hand-minute"/>
-          <circle cx="100" cy="100" r="5" class="clock-center"/>
+          <line id="hand-hour-${clockId}" x1="100" y1="100" x2="100" y2="55" class="clock-hand clock-hand-hour"/>
+          <line id="hand-minute-${clockId}" x1="100" y1="100" x2="100" y2="30" class="clock-hand clock-hand-minute"/>
+          <circle cx="100" cy="100" r="6" class="clock-center"/>
         </svg>
       `;
       updateClockHands(clockId, initialHour, initialMinute);
@@ -215,8 +187,7 @@
       hourEl.style.transform = `rotate(${hourDeg}deg)`;
       minuteEl.style.transform = `rotate(${minuteDeg}deg)`;
     }
-    
-    // Fungsi seret jam (untuk Aktiviti 1)
+
     function startClockDrag(e) {
       e.preventDefault();
       const clockEl = e.currentTarget;
@@ -270,383 +241,294 @@
         window.removeEventListener('touchmove', handleClockDrag);
         window.removeEventListener('mouseup', stopClockDrag);
         window.removeEventListener('touchend', stopClockDrag);
-        const msg = `Jam ditetapkan pada pukul ${getWaktuTeks(clockState.hour, clockState.minute)}.`;
-        setInfo(msg); speak(msg);
+        const msg = `Jam pukul ${clockState.hour}:${clockState.minute.toString().padStart(2,'0')}`;
+        speak(msg);
       }
     }
-    
-    function getWaktuTeks(h, m) {
-        const jam = ["dua belas", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "lapan", "sembilan", "sepuluh", "sebelas", "dua belas"];
-        const h_text = jam[h % 12 === 0 ? (h === 0 ? 0 : 12) : h % 12];
-        if (m === 0) return `${h_text} tepat`;
-        if (m === 15) return `${h_text} suku`;
-        if (m === 30) return `${h_text} setengah`;
-        return `${h_text} ${m.toString().padStart(2, '0')}`;
-    }
-    
-    function formatDigital(h, m) {
-      return `${(h % 12 === 0 ? 12 : h % 12).toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-    }
 
-    /* ====== Router ====== */
+    /* --- ROUTER --- */
     function loadActivity(n) {
       currentActivity = n;
       const content = document.getElementById('activity-content');
+      content.style.opacity = 0;
+      
+      // Cleanup
       stopClockDrag();
       if (activityTimer) clearInterval(activityTimer);
-      
-      if (n === 1) return loadMesinMasa(content);
-      if (n === 2) return loadKiraTempoh(content);
-      if (n === 3) return loadJadualHarian(content);
-      if (n === 4) return loadBakiMasa(content);
-      if (n === 5) return loadLumbaMinit(content);
+
+      setTimeout(() => {
+          if (n === 1) loadMesinMasa(content);
+          if (n === 2) loadKiraTempoh(content);
+          if (n === 3) loadJadualHarian(content);
+          if (n === 4) loadBakiMasa(content);
+          if (n === 5) loadLumbaMinit(content);
+          content.style.opacity = 1;
+      }, 200);
     }
 
-    /* ====== Aktiviti 1: Mesin Masa ====== */
-    function loadMesinMasa(content) {
-      const info = "Masa mula jam 2:00. Tempoh aktiviti ialah 3 jam 15 minit. Laraskan 'Jam Tamat' ke jawapan yang betul.";
-      setInfo(info);
-      
-      content.innerHTML = `
-        <h3 class="text-2xl font-bold text-blue-600 mb-4">1. Mesin Masa</h3>
-        <p class="text-lg text-gray-700 mb-4">
-          Masa Mula: <strong>2:00</strong>. Tempoh: <strong>3 jam 15 minit</strong>.
-        </p>
-        <div class="flex flex-col md:flex-row justify-around items-center gap-4">
-          <div class="text-center">
-            <h4 class="text-lg font-semibold">Jam Mula (2:00)</h4>
-            <div id="clock-start"></div>
-          </div>
-          <div class="text-center">
-            <h4 class="text-lg font-semibold">Jam Tamat (Laraskan)</h4>
-            <div id="clock-end"></div>
-            <div id="digital-display-1" class="text-3xl font-bold text-gray-800 mt-2">03:00</div>
-          </div>
-        </div>
-        <button id="semak-1" class="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg text-xl">
-          Semak Jawapan
-        </button>
-      `;
-      
-      createClockSVG(document.getElementById('clock-start'), 2, 0, true); // Jam statik
-      createClockSVG(document.getElementById('clock-end'), 3, 0, false); // Jam interaktif
-      updateMesinMasaDisplay(3, 0); 
-      
-      document.getElementById('semak-1').onclick = () => {
-        // Jawapan betul: 2:00 + 3j 15m = 5:15
-        const isCorrect = (clockState.hour % 12 === 5) && (clockState.minute === 15);
-        const clockEl = document.getElementById(clockState.id);
-        clockEl.classList.remove('shake');
-        
-        if (isCorrect) {
-          const msg = "Syabas! 5:15 ialah jawapan yang betul.";
-          setInfo(msg); speak(msg);
-          clockEl.querySelector('.clock-face').style.fill = '#dcfce7'; // hijau
-        } else {
-          const msg = `Hmm. ${getWaktuTeks(clockState.hour, clockState.minute)} bukan jawapannya. Cuba kira 2:00 tambah 3 jam 15 minit.`;
-          setInfo(msg); speak(msg);
-          clockEl.classList.add('shake');
-          setTimeout(() => clockEl.classList.remove('shake'), 500);
-          clockEl.querySelector('.clock-face').style.fill = '#fee2e2'; // merah
-        }
-      };
-    }
-    
-    function updateMesinMasaDisplay(h, m) {
-      document.getElementById('digital-display-1').textContent = formatDigital(h, m);
-    }
-
-    /* ====== Aktiviti 2: Kira Tempoh ====== */
-    function loadKiraTempoh(content) {
-      const info = "Kira tempoh dari 9:00 pagi hingga 1:00 petang. Guna butang '+ 1 jam' untuk mengira.";
-      setInfo(info);
-      activityState = { duration: 0 };
-      
-      content.innerHTML = `
-        <h3 class="text-2xl font-bold text-green-600 mb-4">2. Kira Tempoh</h3>
-        <p class="text-lg text-gray-700 mb-4">
-          Dari <strong>9:00 pagi</strong> hingga <strong>1:00 petang</strong>.
-        </p>
-        <div class="flex flex-col md:flex-row justify-around items-center gap-4 mb-4">
-          <div class="text-center">
-            <h4 class="text-lg font-semibold">Masa Mula (9:00)</h4>
-            <div id="clock-start-2"></div>
-          </div>
-          <div class="text-center">
-            <h4 class="text-lg font-semibold">Masa Tamat (1:00)</h4>
-            <div id="clock-end-2"></div>
-          </div>
-        </div>
-        <div class="bg-gray-100 p-4 rounded-lg">
-          <div class="text-lg font-semibold">Tempoh Masa Dikira:</div>
-          <div id="tempoh-display" class="text-5xl font-bold text-green-700 my-2">0 jam</div>
-          <button id="tambah-jam" class="bg-green-500 text-white font-bold py-2 px-5 rounded-lg text-lg mr-2">+ 1 jam</button>
-          <button id="tolak-jam" class="bg-gray-400 text-white font-bold py-2 px-5 rounded-lg text-lg">- 1 jam</button>
-        </div>
-        <button id="semak-2" class="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-xl">
-          Semak Tempoh
-        </button>
-      `;
-
-      createClockSVG(document.getElementById('clock-start-2'), 9, 0, true);
-      createClockSVG(document.getElementById('clock-end-2'), 13, 0, true);
-      
-      const display = document.getElementById('tempoh-display');
-      
-      document.getElementById('tambah-jam').onclick = () => {
-        activityState.duration++;
-        display.textContent = `${activityState.duration} jam`;
-        speak(`${activityState.duration} jam`);
-      };
-      document.getElementById('tolak-jam').onclick = () => {
-        if (activityState.duration > 0) {
-          activityState.duration--;
-          display.textContent = `${activityState.duration} jam`;
-          speak(`${activityState.duration} jam`);
-        }
-      };
-      
-      document.getElementById('semak-2').onclick = () => {
-        const displayBox = display.parentElement;
-        displayBox.classList.remove('shake');
-        if (activityState.duration === 4) {
-          const msg = "Betul! Tempohnya ialah 4 jam.";
-          setInfo(msg); speak(msg);
-          displayBox.style.backgroundColor = '#dcfce7'; // hijau
-        } else {
-          const msg = `Bukan ${activityState.duration} jam. Cuba kira semula: 9 ke 10, 10 ke 11...`;
-          setInfo(msg); speak(msg);
-          displayBox.classList.add('shake');
-          setTimeout(() => displayBox.classList.remove('shake'), 500);
-          displayBox.style.backgroundColor = '#fee2e2'; // merah
-        }
-      };
-    }
-
-    /* ====== Aktiviti 3: Jadual Harian (Sandbox) ====== */
-    function loadJadualHarian(content) {
-      const info = "Eksplorasi: Bina jadual anda. Klik butang aktiviti untuk menambahnya ke jadual.";
-      setInfo(info);
-      activityState = { currentTimeMinutes: 8 * 60 }; 
-      
-      content.innerHTML = `
-        <h3 class="text-2xl font-bold text-purple-600 mb-4">3. Jadual Harian Saya (Eksplorasi)</h3>
-        <div class="flex flex-col md:flex-row gap-6">
-          <div class="w-full md:w-1/3 bg-gray-50 p-4 rounded-lg">
-            <h4 class="text-lg font-semibold mb-3">Pilih Aktiviti:</h4>
-            <div id="bank-butang" class="flex flex-col gap-2">
-              <button data-name="Matematik" data-duration="60" class="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg text-left">
-                + Sesi Matematik (1 jam)
-              </button>
-              <button data-name="Rehat" data-duration="30" class="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg text-left">
-                + Rehat (30 minit)
-              </button>
-              <button data-name="Sains" data-duration="90" class="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg text-left">
-                + Sesi Sains (1 jam 30 minit)
-              </button>
-              <button data-name="Makan" data-duration="45" class="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg text-left">
-                + Makan Tengah Hari (45 minit)
-              </button>
-            </div>
-          </div>
-          <div class="w-full md:w-2/3">
-            <h4 class="text-lg font-semibold mb-3">Jadual Anda:</h4>
-            <div id="jadual-list" class="flex flex-col gap-2">
-              <div class="bg-gray-200 p-3 rounded-lg text-gray-600">
-                Masa Mula: <strong>8:00 AM</strong>. Tekan butang untuk tambah aktiviti.
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      document.getElementById('bank-butang').querySelectorAll('button').forEach(btn => {
-        btn.onclick = (e) => {
-          const name = e.target.dataset.name;
-          const duration = parseInt(e.target.dataset.duration);
-          const startTime = activityState.currentTimeMinutes;
-          const endTime = startTime + duration;
-          const startTimeStr = formatMinutesToAMPM(startTime);
-          const endTimeStr = formatMinutesToAMPM(endTime);
-          
-          const newItem = document.createElement('div');
-          newItem.className = 'jadual-item bg-purple-50 p-3 rounded-lg shadow-sm';
-          newItem.innerHTML = `
-            <strong class="text-purple-800">${name}</strong> (${duration} minit)
-            <div class="text-sm text-gray-700">Masa: ${startTimeStr} ➔ ${endTimeStr}</div>
-          `;
-          
-          const list = document.getElementById('jadual-list');
-          if(list.children.length === 1 && list.children[0].classList.contains('bg-gray-200')) {
-            list.innerHTML = '';
-          }
-          list.appendChild(newItem);
-          
-          activityState.currentTimeMinutes = endTime;
-          const msg = `Menambah ${name}. Masa tamat ${endTimeStr}.`;
-          setInfo(msg); speak(msg);
-        };
-      });
-    }
-    
-    function formatMinutesToAMPM(totalMinutes) {
-      let h = Math.floor(totalMinutes / 60) % 24;
-      let m = totalMinutes % 60;
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12;
-      h = h ? h : 12;
-      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
-    }
-
-    /* ====== Aktiviti 4: Baki Masa Rehat (Permainan) ====== */
-    function loadBakiMasa(content) {
-      activityState = { bakiMasa: 20 };
-      const info = "Permainan Baki Masa: Anda ada 20 minit. Pilih aktiviti dengan bijak!";
-      setInfo(info);
-      
-      content.innerHTML = `
-        <h3 class="text-2xl font-bold text-red-600 mb-4">4. Baki Masa Rehat</h3>
-        <div class="text-center bg-red-50 p-4 rounded-lg mb-6">
-          <div class="text-lg font-semibold text-red-800">Baki Masa Anda:</div>
-          <div id="baki-masa-display" class="text-6xl font-black text-red-600 my-2">20</div>
-          <div class="text-lg font-semibold text-red-800">minit</div>
-        </div>
-        <div id="pilihan-aktiviti" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        </div>
-        <button onclick="loadActivity(4)" class="mt-6 bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-5 rounded-lg">
-          Mula Semula
-        </button>
-      `;
-      
-      renderPilihanMasa(activityState.bakiMasa);
-    }
-    
-    function renderPilihanMasa(baki) {
-      const container = document.getElementById('pilihan-aktiviti');
-      const display = document.getElementById('baki-masa-display');
-      display.textContent = baki;
-      
-      const pilihan = [
-        { name: "Beli makanan", cost: 7 }, { name: "Bermain bola", cost: 10 },
-        { name: "Makan", cost: 10 }, { name: "Borak", cost: 5 }
-      ];
-      
-      container.innerHTML = '';
-      
-      if (baki === 0) {
-        container.innerHTML = `<div class="md:col-span-2 text-center text-xl font-bold text-red-700">Masa rehat telah tamat!</div>`;
-        setInfo("Kring! Masa rehat telah tamat."); speak("Kring! Masa rehat telah tamat.");
-        return;
-      }
-      
-      pilihan.forEach(p => {
-        const isDisabled = baki < p.cost;
-        container.innerHTML += `
-          <button class="pilihan-btn bg-red-500 hover:bg-red-600 text-white font-semibold p-4 rounded-lg text-lg" 
-                  data-cost="${p.cost}" ${isDisabled ? 'disabled' : ''}>
-            ${p.name} (Guna ${p.cost} minit)
-          </button>
-        `;
-      });
-      
-      container.querySelectorAll('button').forEach(btn => {
-        btn.onclick = (e) => {
-          const cost = parseInt(e.target.dataset.cost);
-          activityState.bakiMasa -= cost;
-          const msg = `Anda guna ${cost} minit. Baki masa: ${activityState.bakiMasa} minit.`;
-          setInfo(msg); speak(msg);
-          display.classList.add('shake');
-          setTimeout(() => display.classList.remove('shake'), 500);
-          renderPilihanMasa(activityState.bakiMasa);
-        };
-      });
-    }
-
-    /* ====== Aktiviti 5: Lumba Minit (Permainan Reaksi) ====== */
-    function loadLumbaMinit(content) {
-      const targetMinit = 15;
-      const info = `Lumba Minit: Sasaran ialah ${targetMinit} minit. Tekan dan tahan butang untuk gerakkan jarum. Lepas pada sasaran!`;
-      setInfo(info);
-      
-      content.innerHTML = `
-        <h3 class="text-2xl font-bold text-orange-600 mb-4">5. Lumba Minit</h3>
-        <p class="text-lg text-gray-700 mb-4">
-          Sasaran: <strong class="text-orange-700">${targetMinit} minit</strong>
-        </p>
-        <div id="clock-container-5"></div>
-        <div id="display-5" class="text-3xl font-bold text-gray-800 mt-2">Minit: 0</div>
-        <button id="hold-btn" class="hold-btn mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-100">
-          Tekan & Tahan
-        </button>
-      `;
-      
-      const clockId = createClockSVG(document.getElementById('clock-container-5'), 0, 0, true);
-      const display = document.getElementById('display-5');
-      const btn = document.getElementById('hold-btn');
-      let gameMinutes = 0;
-      
-      const updateGameClock = () => {
-        gameMinutes = (gameMinutes + 1) % 60;
-        updateClockHands(clockId, 0, gameMinutes);
-        display.textContent = `Minit: ${gameMinutes}`;
-      };
-      
-      btn.onmousedown = (e) => {
-        e.preventDefault(); gameMinutes = 0;
-        updateClockHands(clockId, 0, 0);
-        display.textContent = `Minit: 0`;
-        display.style.color = '#1f2937'; // reset color
-        activityTimer = setInterval(updateGameClock, 50); 
-        btn.textContent = "Lepaskan!";
-      };
-      
-      btn.onmouseup = (e) => {
-        e.preventDefault();
-        if (activityTimer) clearInterval(activityTimer);
-        btn.textContent = "Tekan & Tahan";
-        
-        if (gameMinutes === targetMinit) {
-          const msg = `Tepat! Anda berhenti di ${gameMinutes} minit. Syabas!`;
-          setInfo(msg); speak(msg);
-          display.style.color = '#16a34a';
-        } else {
-          const beza = Math.abs(gameMinutes - targetMinit);
-          const msg = `Anda berhenti di ${gameMinutes} minit. Tersasar ${beza} minit. Cuba lagi!`;
-          setInfo(msg); speak(msg);
-          display.style.color = '#dc2626';
-        }
-      };
-      
-      btn.ontouchstart = btn.onmousedown;
-      btn.ontouchend = btn.onmouseup;
-    }
-
-    /* ====== Kawalan Umum ====== */
     function clearActivity() {
-      currentActivity = 0;
-      stopClockDrag();
-      if (activityTimer) clearInterval(activityTimer);
-      
-      document.getElementById('activity-content').innerHTML = `
-        <div class="text-center py-16">
-          <div class="text-6xl mb-4">⏰</div>
-          <h2 class="text-3xl font-bold text-gray-800 mb-4">Kemahiran Pemulihan: Masa dan Waktu (Intermediate)</h2>
-          <p class="text-xl text-gray-600 mb-8">Aplikasikan kemahiran tambah dan tolak masa anda.</p>
-          <div class="text-4xl">👇</div>
-        </div>
-      `;
-      setInfo("Pilih aktiviti 'intermediate' untuk menguji kemahiran masa!");
+        currentActivity = 0;
+        if (activityTimer) clearInterval(activityTimer);
+        document.getElementById('activity-content').innerHTML = `<div class="py-10 text-center"><div class="text-8xl mb-6 animate-bounce">⏳</div><h2 class="text-5xl font-bold text-emerald-600 mb-4">Masa & Waktu</h2><p class="text-2xl text-slate-500 mb-8 font-semibold">Pilih butang di bawah.</p></div>`;
+        setInfo("Pilih aktiviti untuk mula.");
     }
-    
-    function nextActivity() {
-      if (currentActivity === 0) return loadActivity(1);
-      if (currentActivity < 5) return loadActivity(currentActivity + 1);
-      return loadActivity(1);
+    function nextActivity() { let next = currentActivity + 1; if (next > 5) next = 1; loadActivity(next); }
+
+    /* =========================================
+       LOGIK AKTIVITI
+       ========================================= */
+
+    /* --- 1. MESIN MASA --- */
+    function loadMesinMasa(content) {
+        setInfo("Mula 2:00. Tempoh 3 jam 15 minit. Laraskan Jam Tamat.");
+        content.innerHTML = `
+            <h3 class="text-4xl font-bold text-blue-500 mb-6 text-center">🕰️ Mesin Masa (Laraskan Jam)</h3>
+            <div class="bg-blue-50 rounded-3xl p-6 border-2 border-blue-200 text-center max-w-3xl mx-auto">
+                <p class="text-xl text-slate-600 mb-4 font-bold">Mula: 2:00 | Tempoh: <span class="text-blue-600">3 jam 15 minit</span></p>
+                
+                <div class="flex flex-col md:flex-row justify-center items-center gap-8 mb-6">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm">
+                        <div class="text-sm font-bold text-slate-400 mb-2">Masa Mula</div>
+                        <div id="clock-start"></div>
+                    </div>
+                    <div class="text-4xl text-slate-300">➡️</div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-300">
+                        <div class="text-sm font-bold text-blue-500 mb-2">Jam Tamat (Gerakkan Jarum)</div>
+                        <div id="clock-end"></div>
+                        <div id="digital-display-1" class="text-2xl font-black text-slate-700 mt-2 bg-slate-100 rounded-lg py-1">03:00</div>
+                    </div>
+                </div>
+
+                <button id="semak-1" class="btn-3d bg-blue-500 text-white font-bold py-3 px-8 rounded-xl text-xl">Semak Jawapan</button>
+            </div>
+        `;
+        createClockSVG(document.getElementById('clock-start'), 2, 0, true);
+        createClockSVG(document.getElementById('clock-end'), 3, 0, false);
+        updateMesinMasaDisplay(3, 0);
+
+        document.getElementById('semak-1').onclick = () => {
+            const isCorrect = (clockState.hour % 12 === 5) && (clockState.minute === 15);
+            if (isCorrect) {
+                setInfo("Tahniah! 5:15 ialah jawapan yang betul.");
+                triggerWin();
+                speak("Betul! 5 15.");
+            } else {
+                setInfo("Salah. 2 tambah 3 jadi 5. Cuba lagi.");
+                speak("Salah. Cuba lagi.");
+                document.getElementById('clock-end').classList.add('shake');
+                setTimeout(()=>document.getElementById('clock-end').classList.remove('shake'), 500);
+            }
+        };
+    }
+    function updateMesinMasaDisplay(h, m) {
+        const hh = h % 12 === 0 ? 12 : h % 12;
+        document.getElementById('digital-display-1').textContent = `${hh.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
     }
 
-    if ('speechSynthesis' in window) {
-      setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 1000);
+    /* --- 2. KIRA TEMPOH --- */
+    function loadKiraTempoh(content) {
+        setInfo("Berapa jam dari 9:00 pagi hingga 1:00 petang?");
+        activityState = { duration: 0 };
+        
+        content.innerHTML = `
+            <h3 class="text-4xl font-bold text-emerald-500 mb-6 text-center">⏱️ Kira Tempoh</h3>
+            <div class="bg-emerald-50 rounded-3xl p-6 border-2 border-emerald-200 max-w-3xl mx-auto text-center">
+                <p class="text-xl font-bold text-slate-600 mb-6">Dari 9:00 Pagi hingga 1:00 Petang</p>
+                
+                <div class="flex justify-center gap-6 mb-6">
+                    <div id="clock-start-2" class="scale-75"></div>
+                    <div id="clock-end-2" class="scale-75"></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl inline-block shadow-sm border border-emerald-100 mb-6">
+                    <div class="text-sm text-slate-400 font-bold uppercase">Tempoh Dikira</div>
+                    <div id="tempoh-display" class="text-5xl font-black text-emerald-600 my-2">0 jam</div>
+                    <div class="flex gap-2 justify-center">
+                        <button id="tolak-jam" class="bg-slate-200 text-slate-600 px-4 py-2 rounded-lg font-bold hover:bg-slate-300">-</button>
+                        <button id="tambah-jam" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-600">+</button>
+                    </div>
+                </div>
+                <br>
+                <button id="semak-2" class="btn-3d bg-emerald-600 text-white font-bold py-3 px-8 rounded-xl text-xl">Semak</button>
+            </div>
+        `;
+        createClockSVG(document.getElementById('clock-start-2'), 9, 0, true);
+        createClockSVG(document.getElementById('clock-end-2'), 13, 0, true);
+        
+        const display = document.getElementById('tempoh-display');
+        document.getElementById('tambah-jam').onclick = () => { activityState.duration++; display.textContent = activityState.duration + " jam"; };
+        document.getElementById('tolak-jam').onclick = () => { if(activityState.duration>0) activityState.duration--; display.textContent = activityState.duration + " jam"; };
+        
+        document.getElementById('semak-2').onclick = () => {
+            if(activityState.duration === 4) {
+                setInfo("Tepat! 4 jam."); triggerWin(); speak("Betul, 4 jam.");
+            } else {
+                setInfo("Salah. Kira: 9 ke 10, 10 ke 11..."); speak("Salah.");
+                display.classList.add('shake'); setTimeout(()=>display.classList.remove('shake'), 500);
+            }
+        };
     }
+
+    /* --- 3. JADUAL HARIAN --- */
+    function loadJadualHarian(content) {
+        setInfo("Bina jadual anda. Klik butang aktiviti.");
+        activityState = { currentTimeMinutes: 8 * 60 };
+
+        content.innerHTML = `
+            <h3 class="text-4xl font-bold text-violet-500 mb-6 text-center">📝 Jadual Harian Saya</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-violet-50 p-4 rounded-2xl border-2 border-violet-200">
+                    <h4 class="font-bold text-violet-800 mb-4 text-center">Pilih Aktiviti</h4>
+                    <div id="bank-butang" class="flex flex-col gap-3">
+                        <button data-name="Matematik" data-duration="60" class="btn-3d bg-white border-violet-200 text-violet-700 font-bold py-3 px-4 rounded-xl text-left text-sm">📐 Matematik (1 jam)</button>
+                        <button data-name="Rehat" data-duration="30" class="btn-3d bg-white border-violet-200 text-violet-700 font-bold py-3 px-4 rounded-xl text-left text-sm">🥪 Rehat (30 minit)</button>
+                        <button data-name="Sains" data-duration="90" class="btn-3d bg-white border-violet-200 text-violet-700 font-bold py-3 px-4 rounded-xl text-left text-sm">🧪 Sains (1 jam 30m)</button>
+                        <button data-name="Sukan" data-duration="45" class="btn-3d bg-white border-violet-200 text-violet-700 font-bold py-3 px-4 rounded-xl text-left text-sm">⚽ Sukan (45 minit)</button>
+                    </div>
+                </div>
+                <div class="md:col-span-2 bg-white p-4 rounded-2xl border-2 border-slate-200 h-[400px] flex flex-col">
+                    <h4 class="font-bold text-slate-500 mb-4">Jadual (Mula 8:00 AM)</h4>
+                    <div id="jadual-list" class="flex-grow overflow-y-auto pr-2">
+                        <div class="text-slate-300 text-center italic mt-10">Jadual kosong...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('bank-butang').querySelectorAll('button').forEach(btn => {
+            btn.onclick = (e) => {
+                const name = e.target.dataset.name;
+                const duration = parseInt(e.target.dataset.duration);
+                const start = activityState.currentTimeMinutes;
+                const end = start + duration;
+                
+                const newItem = document.createElement('div');
+                newItem.className = "jadual-item animate-[popIn_0.3s]";
+                newItem.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-slate-700">${name}</span>
+                        <span class="bg-violet-100 text-violet-700 px-2 py-1 rounded text-xs font-bold">${formatTime(start)} ➔ ${formatTime(end)}</span>
+                    </div>
+                `;
+                
+                const list = document.getElementById('jadual-list');
+                if(list.querySelector('.text-slate-300')) list.innerHTML = '';
+                list.appendChild(newItem);
+                list.scrollTop = list.scrollHeight;
+                
+                activityState.currentTimeMinutes = end;
+                speak(`Tambah ${name}`);
+            }
+        });
+    }
+    function formatTime(mins) {
+        let h = Math.floor(mins / 60) % 24;
+        let m = mins % 60;
+        let ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${h}:${m.toString().padStart(2,'0')} ${ampm}`;
+    }
+
+    /* --- 4. BAKI MASA (GAME) --- */
+    function loadBakiMasa(content) {
+        activityState = { baki: 20 };
+        setInfo("Anda ada 20 minit rehat. Pilih aktiviti!");
+        
+        content.innerHTML = `
+            <h3 class="text-4xl font-bold text-red-500 mb-6 text-center">⏳ Baki Masa Rehat</h3>
+            <div class="max-w-2xl mx-auto bg-red-50 rounded-full py-4 px-8 border-4 border-red-200 text-center mb-8 w-fit">
+                <span class="text-red-800 font-bold uppercase text-sm mr-2">Baki Masa</span>
+                <span id="baki-display" class="text-5xl font-black text-red-600">20</span>
+                <span class="text-red-800 font-bold text-sm ml-1">minit</span>
+            </div>
+
+            <div id="options-grid" class="grid grid-cols-2 gap-4 max-w-2xl mx-auto"></div>
+            <div class="text-center mt-6"><button onclick="loadActivity(4)" class="text-slate-400 underline font-bold">Reset</button></div>
+        `;
+        renderOptions();
+    }
+    function renderOptions() {
+        const container = document.getElementById('options-grid');
+        const items = [
+            {name:"Makan", cost:10, icon:"🍜"}, {name:"Beli Air", cost:5, icon:"🥤"},
+            {name:"Tandas", cost:5, icon:"🚽"}, {name:"Main Bola", cost:15, icon:"⚽"}
+        ];
+        
+        container.innerHTML = "";
+        if(activityState.baki === 0) {
+            container.innerHTML = `<div class="col-span-2 text-center font-bold text-2xl text-red-600 animate-pulse">KRINGGG! Masa Tamat!</div>`;
+            return;
+        }
+
+        items.forEach(item => {
+            const disabled = activityState.baki < item.cost;
+            container.innerHTML += `
+                <button onclick="useTime(${item.cost})" ${disabled ? 'disabled' : ''} 
+                    class="btn-3d bg-white border-red-200 text-slate-700 p-4 rounded-xl flex items-center justify-between ${disabled ? 'opacity-50 grayscale' : ''}">
+                    <span class="text-2xl mr-2">${item.icon}</span>
+                    <span class="font-bold">${item.name}</span>
+                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">-${item.cost}m</span>
+                </button>
+            `;
+        });
+    }
+    window.useTime = function(cost) {
+        activityState.baki -= cost;
+        document.getElementById('baki-display').textContent = activityState.baki;
+        renderOptions();
+        speak(`Tolak ${cost} minit.`);
+    }
+
+    /* --- 5. LUMBA MINIT --- */
+    function loadLumbaMinit(content) {
+        const target = 15;
+        setInfo(`Tekan & Tahan butang. Lepaskan bila jarum sampai minit ${target}!`);
+        
+        content.innerHTML = `
+            <h3 class="text-4xl font-bold text-orange-500 mb-4 text-center">🏁 Lumba Minit (Refleks)</h3>
+            <div class="text-center mb-4 font-bold text-slate-500">Sasaran: <span class="text-orange-600 text-2xl">${target} Minit</span></div>
+            
+            <div id="game-clock" class="mb-4"></div>
+            <div id="game-res" class="text-center text-3xl font-black text-slate-800 mb-4">0 Minit</div>
+            
+            <div class="text-center">
+                <button id="hold-btn" class="btn-3d bg-orange-500 text-white font-bold py-4 px-10 rounded-full text-2xl shadow-lg active:bg-orange-600">
+                    TEKAN & TAHAN ✊
+                </button>
+            </div>
+        `;
+        
+        const clockId = createClockSVG(document.getElementById('game-clock'), 0, 0, true);
+        let min = 0;
+        const btn = document.getElementById('hold-btn');
+        const res = document.getElementById('game-res');
+
+        const run = () => {
+            min = (min + 1) % 60;
+            updateClockHands(clockId, 0, min);
+            res.textContent = `${min} Minit`;
+        };
+
+        btn.onmousedown = (e) => {
+            e.preventDefault(); min = 0; activityTimer = setInterval(run, 40); // Laju
+            btn.classList.add('scale-95');
+        };
+        btn.onmouseup = (e) => {
+            e.preventDefault(); clearInterval(activityTimer);
+            btn.classList.remove('scale-95');
+            if(min === target) {
+                res.className = "text-center text-4xl font-black text-green-500 animate-bounce";
+                res.textContent = "TEPAT! 🎉"; triggerWin(); speak("Hebat! Tepat sekali.");
+            } else {
+                res.className = "text-center text-3xl font-black text-red-500";
+                res.textContent = `Tersasar! (${min} minit)`; speak("Tersasar.");
+            }
+        };
+        btn.ontouchstart = btn.onmousedown;
+        btn.ontouchend = btn.onmouseup;
+    }
+
+    if ('speechSynthesis' in window) { setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 1000); }
   </script>
 </body>
 </html>
